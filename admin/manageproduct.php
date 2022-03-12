@@ -1,0 +1,238 @@
+<?php
+    echo "<div class='col-12 text-center text-primary p-3 h3'>DANH SÁCH SẢN PHẨM</div>";
+    $cnn = mysqli_connect("localhost", "root", "", "webcaycanh") or die (" khong ket noi duoc");
+    $limit = 10;
+    $page = "";
+    if(isset($_GET['page']))
+    {
+        $page = $_GET['page'];       
+    }
+    else
+    {
+        $page = 1;
+    }
+    $start = ($page - 1) * $limit;
+    $sql = "SELECT * FROM sanpham  LIMIT $start, $limit";
+    $result = mysqli_query($cnn, $sql);
+    $output = "";
+    $i = 0;
+    if(mysqli_num_rows($result)>=0)
+    {
+        $output .=
+        "<table class='table table-bordered border-primary'>
+            <thead>
+                <form action='admin.php?chuyentrang=5&page=".$page."' method='POST'>
+                    <tr>
+                        <th class='col-1 text-primary'>STT</th>
+                        <th class='col-1 text-primary'>Mã</th>
+                        <th class='col-2 text-primary'>Tên</th>
+                        <th class='col-1 text-primary'>Mã loại</th>
+                        <th class='col-1 text-primary'>Đơn giá</th>
+                        <th class='col-2 text-primary'>Chi tiết sẩn phẩm</th>
+                        <th class='col-2 text-primary'>Ảnh</th>
+                        <th class='col-1'><input class='btn btn-primary form-control' type='submit' name='add' value='Add Product'></th>
+                        <th class='col-1'><input class='btn btn-primary form-control' type='submit' name='deleteall' value='Delete All'></th>
+                    </tr>
+                </form>
+            </thead>
+            <tbody>";
+        while($row = mysqli_fetch_assoc($result))
+        {
+            $i++;
+            if(!isset($_GET['page']))
+            {
+                $_GET['page'] = 1;
+            }
+            $output.="
+            <form action='admin.php?chuyentrang=5&page=".$page."&id=".$row['masanpham']."' method='POST'>
+                <tr>
+                    <td>".$i."</td>
+                    <td>".$row['masanpham']."</td>
+                    <td>".$row['tensanpham']."</td>
+                    <td>".$row['maloai']."</td>
+                    <td>".$row['dongia']."</td>
+                    <td>".$row['chitietsanpham']."</td>
+                    <td><img src='./images/product/".$row['anh']."'></td>
+                    <td><input class='btn border border-primary form-control' type='submit' name='edit' value='Edit'></td>
+                    <td><input class='btn border border-primary form-control' type='submit' name='delete' value='Delete'</td>
+                </tr>
+            </form>";
+        }
+        if(isset($_POST['delete']))
+        {
+            $id = $_GET['id'];
+            mysqli_query($cnn, "DELETE FROM sanpham WHERE masanpham = '$id'");
+            header("Location: admin.php?chuyentrang=5&page=".$page."");
+        }
+        if(isset($_POST['edit']))
+        {
+            $id = $_GET['id'];
+            $productSQL = "SELECT * FROM sanpham WHERE masanpham = '$id'";
+            $product = mysqli_query($cnn, $productSQL);
+            while($row=mysqli_fetch_array($product))
+            {
+                $masanpham = $row['masanpham'];
+                $tensanpham = $row['tensanpham'];									
+                $maloai = $row['maloai'];
+                $dongia = $row['dongia'];				
+                $chitietsanpham = $row['chitietsanpham'];
+                $anh = $row['anh'];
+            }
+            echo "<div class='d-flex justify-content-center'>
+                    <div class='col-4'></div>
+                        <div class='col-4 position-fixed'>
+                            <form class='bg-light form-inline' action='admin.php?chuyentrang=5&page=".$page."&id=".$id."' method='POST'>
+                                <fieldset>
+                                    <div class=''>
+                                        <input class='btn btn-primary' type='submit' value='Cancel'>
+                                    </div>
+                                    <legend>Thông tin sản phẩm</legend>
+                                    <div class=''>
+                                        <lable>Mã sản phẩm</lable>
+                                        <input class='form-control' type='text' name='msp' value=".$masanpham.">
+                                    </div>
+                                    <div class=''>
+                                        <lable>Tên sản phẩm</lable>
+                                        <input class='form-control' type='text' name='tsp' value=".$tensanpham.">
+                                    </div>
+                                    <div class=''>
+                                        <lable>Mã loại</lable>
+                                        <input class='form-control' type='text' name='ml' value=".$maloai.">
+                                    </div>
+                                    <div class=''>
+                                        <lable>Đơn giá</lable>
+                                        <input class='form-control' type='text' name='dg' value=".$dongia.">
+                                    </div>
+                                    <div class=''>
+                                        <lable>Chi tiết sản phẩm</lable>
+                                        <textarea class='form-control' name='ctsp'>$chitietsanpham</textarea>
+                                    </div>
+                                    <div class=''>
+                                        <lable>Ảnh</lable>
+                                        <input class='form-control' type='file' name='a' value=".$anh.">
+                                    </div>
+                                    <div class=''>
+                                    <input class='btn-primary form-control' type='submit' name='save' value='Save'>
+                                    </div>
+                                </fieldset>
+                            </form>
+                        </div>
+                    <div class='col-4'></div>
+                </div>";
+        }
+        if(isset($_POST['save']))
+        {
+            $id = $_GET['id'];
+            $msp = isset($_POST['msp']) ? $_POST['msp'] : $id;
+            $tsp = isset($_POST['tsp']) ? $_POST['tsp'] : $tensanpham;
+            $ml = isset($_POST['ml']) ? $_POST['ml'] : $maloai;
+            $a = isset($_POST['a']) ? $_POST['a'] : $anh;
+            $dg = isset($_POST['dg']) ? $_POST['dg'] : $dongia;
+            $ctsp = isset($_POST['ctsp']) ? $_POST['ctsp'] : $chitietsanpham;
+            $updateSQL = "UPDATE sanpham SET masanpham = '$msp', tensanpham = '$tsp', maloai = '$ml'
+                        , anh = '$a', dongia = '$dg', chitietsanpham = '$ctsp' WHERE masanpham = '$id'";
+            mysqli_query($cnn, $updateSQL);
+            header("Location: admin.php?chuyentrang=5&page=".$page."");
+        }
+        if(isset($_POST['add']))
+        {
+            echo "<div class='d-flex justify-content-center'>
+                    <div class='col-4'></div>
+                        <div class='col-4 position-fixed'>
+                            <form class='bg-light form-inline' action='admin.php?chuyentrang=5&page=".$page."' method='POST'>
+                                <fieldset>
+                                    <legend>Thông tin sản phẩm</legend>
+                                    <div class=''>
+                                        <input class='btn btn-primary' type='submit' value='Cancel'>
+                                    </div>
+                                    <div class=''>
+                                        <lable>Mã sản phẩm</lable>
+                                        <input class='form-control' type='text' name='msp'>
+                                    </div>
+                                    <div class=''>
+                                        <lable>Tên sản phẩm</lable>
+                                        <input class='form-control' type='text' name='tsp'>
+                                    </div>
+                                    <div class=''>
+                                        <lable>Mã loại</lable>
+                                        <input class='form-control' type='text' name='ml'>
+                                    </div>
+                                    <div class=''>
+                                        <lable>Đơn giá</lable>
+                                        <input class='form-control' type='text' name='dg'>
+                                    </div>
+                                    <div class=''>
+                                        <lable>Chi tiết sản phẩm</lable>
+                                        <textarea class='form-control' name='ctsp'></textarea>
+                                    </div>
+                                    <div class=''>
+                                        <lable>Ảnh</lable>
+                                        <input class='form-control' type='file' name='a'>
+                                    </div>
+                                    <div class=''>
+                                        <input class='btn-primary form-control' type='submit' name='doneadd' value='Add'>
+                                    </div>
+                                </fieldset>
+                            </form>
+                        </div>
+                        <div class='col-4'></div>
+                    </div>";
+        }
+        if(isset($_POST['doneadd']))
+        {
+            $msp = isset($_POST['msp']) ? $_POST['msp'] : '';
+            $tsp = isset($_POST['tsp']) ? $_POST['tsp'] : '';
+            $ml = isset($_POST['ml']) ? $_POST['ml'] : '';
+            $a = isset($_POST['a']) ? $_POST['a'] : '';
+            $dg = isset($_POST['dg']) ? $_POST['dg'] : '';
+            $ctsp = isset($_POST['ctsp']) ? $_POST['ctsp'] : '';
+            $insertSQL = "INSERT INTO `sanpham`(`tensanpham`, `dongia`, `maloai`, `masanpham`, `chitietsanpham`, `anh`)
+                        VALUES ('$tsp', '$dg', '$ml', '$msp', '$ctsp', '$a')";
+            mysqli_query($cnn, $insertSQL);
+            header("Location: admin.php?chuyentrang=5&page=".$page."");
+        }
+        $sql_total = "SELECT * FROM sanpham";
+        $records = mysqli_query( $cnn, $sql_total) or die ("sai");
+        $total_records = mysqli_num_rows($records);
+        $total_page = ceil($total_records/$limit);
+        $output .= "</tbody>
+                </table>";
+        if($page > 1 && $total_page > 1)
+        {
+            $prev = "<a href='admin.php?chuyentrang=5&page=".($page-1)."' class='col-1 btn border border-primary'>Prev</a>";
+        }
+        else
+        {
+            $prev = "<div class='col-1'></div>";
+        }
+        // Lặp khoảng giữa
+        $trang = "";
+        for($i = 1; $i <= $total_page; $i++)
+        {
+            // Nếu là trang hiện tại thì hiển thị thẻ span
+            // ngược lại hiển thị thẻ a
+            if($i == $page)
+            {
+                $trang .= "<a class='col-1 btn btn-primary'>".$i."</a>";
+            }
+            else
+            {
+                $trang .= "<a href='admin.php?chuyentrang=5&page=".$i."' class='col-1 btn border border-primary'>".$i."</a>";
+            }
+        }
+        // nếu current_page < $total_page và total_page > 1 mới hiển thị nút prev
+        
+        if ($page < $total_page && $total_page > 1)
+        {
+            $next = "<a href='admin.php?chuyentrang=5&page=".($page+1)."' class='col-1 btn border border-primary'>Next</a>";
+        }
+        else
+        {
+            $next = "<div class='col-1'></div>";
+        }
+        echo "<div class='mt-3 d-flex justify-content-between'>".$prev."<div>".$trang."</div>".$next."</div>";
+        echo "<div class='mt-3'>".$output."</div>";
+        echo "<div class='d-flex justify-content-between' mb-5>".$prev."<div>".$trang."</div>".$next."</div>";
+    }
+    mysqli_close($cnn);
+?>
